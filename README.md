@@ -4,7 +4,7 @@ Maker Media GmbH
 
 ***
 
-![Picture](https://github.com/MakeMagazinDE/Studioblitz/blob/master/blitzgen_strobo_k.JPG) 
+![Picture](https://github.com/MakeMagazinDE/Loeten-im-Pizzaofen/blob/master/pizzaofen_kl.JPG) 
 
 # Löten im Pizzaofen
 
