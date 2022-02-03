@@ -16,8 +16,8 @@ Nachtrag: In der Schaltung ist R1 für normal helle LEDs zu hoch bemessen. Werte
 
 ### Dateien:
 
-* ESP32-Sourcen
+* ESP32-Sourcen (folgt)
 
 Den vollständigen Artikel mit der Bauanleitung gibt es in der [Make-Ausgabe 1/22 ab Seite 86](https://www.heise.de/select/make/2022/1).
 
-Teil 1 finden Sie in der [Make-Ausgabe 6/21 ab Seite 104](https://www.heise.de/select/make/2021/6/2130609051769976417)
+Teil 1 finden Sie in der [Make-Ausgabe 6/21 ab Seite 104](https://www.heise.de/select/make/2021/6/2130609051769976417).
