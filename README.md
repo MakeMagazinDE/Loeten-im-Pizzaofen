@@ -10,7 +10,7 @@ Maker Media GmbH
 
 ### Der Weg zur Platine, Teil 2
 
-
+Nachtrag: In der Schaltung ist R1 für normal helle LEDs zu hoch bemessen. Werte von 220 bis 470 Ohm sollten eine normale Helligkeit erzielen.
 ### Dateien:
 
 * ESP32-Sourcen
