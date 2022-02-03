@@ -10,9 +10,9 @@ Maker Media GmbH
 
 ### Der Weg zur Platine, Teil 2
 
-In unserem Artikel entsteht aus einem Pizza-Ofen eine praktische Reflow-Maschine mit WLAN-Fernsteuerung über den Browser.
+In unserem Artikel entsteht aus einem Pizza-Ofen eine praktische Reflow-Maschine für das Löten von SMD-Bauteilen mit WLAN-Fernsteuerung über den Browser.
 
-Nachtrag: In der Schaltung ist R1 für normal helle LEDs zu hoch bemessen. Werte von 220 bis 470 Ohm sollten eine ausreichende Helligkeit erzielen.
+**Nachtrag:** In der Schaltung ist R1 für normal helle LEDs zu hoch bemessen. Werte von 220 bis 470 Ohm sollten eine ausreichende Helligkeit erzielen.
 
 ### Dateien:
 
