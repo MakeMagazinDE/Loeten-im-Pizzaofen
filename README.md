@@ -16,6 +16,7 @@ In unserem Artikel entsteht aus einem Pizza-Ofen eine praktische Reflow-Maschine
 
 ### Verzeichnisse:
 
+* **Beispielplatine** Die im Artikel angefertigte Platine, layoutet mit Sprint Layout (HPGL-Ausgabe)
 * **reflow_oven** ESP32-Sourcen und Firmware
 * **hpgl2gcode** Einfacher Konverter für HPGL-Dateien in G-Code, Sourcen und ausführbare EXE
 
