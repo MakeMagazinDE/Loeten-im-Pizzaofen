@@ -21,3 +21,5 @@ In unserem Artikel entsteht aus einem Pizza-Ofen eine praktische Reflow-Maschine
 Den vollständigen Artikel mit der Bauanleitung gibt es in der [Make-Ausgabe 1/22 ab Seite 86](https://www.heise.de/select/make/2022/1).
 
 Teil 1 finden Sie in der [Make-Ausgabe 6/21 ab Seite 104](https://www.heise.de/select/make/2021/6/2130609051769976417).
+
+# Aufgrund technischer Probleme werden die Daten zum Projekt in Kürze nachgereicht. Wir entschuldigen uns für diesen Umstand!
