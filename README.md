@@ -16,8 +16,8 @@ In unserem Artikel entsteht aus einem Pizza-Ofen eine praktische Reflow-Maschine
 
 ### Verzeichnisse:
 
-* reflow_oven ESP32-Sourcen und Firmware
-* hpgl2gcode Einfacher Konverter für HPGL-Dateien in G-Code, Sourcen und ausführbare EXE
+* **reflow_oven** ESP32-Sourcen und Firmware
+* **hpgl2gcode** Einfacher Konverter für HPGL-Dateien in G-Code, Sourcen und ausführbare EXE
 
 Den vollständigen Artikel mit der Bauanleitung gibt es in der [Make-Ausgabe 1/22 ab Seite 86](https://www.heise.de/select/make/2022/1).
 
