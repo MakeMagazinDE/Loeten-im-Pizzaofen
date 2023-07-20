@@ -1039,6 +1039,8 @@ void setup()
   // liesSOLLTemperatur() gestartet.
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/index.html"); });
+  server.on("/highcharts.js", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/highcharts.js"); });
   server.on("/SOLL", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/plain", liesSOLLTemperatur().c_str()); });
   server.on("/TEMP", HTTP_GET, [](AsyncWebServerRequest *request)
