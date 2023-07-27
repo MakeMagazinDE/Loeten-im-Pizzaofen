@@ -66,13 +66,6 @@ AsyncWebServer server(80);
 // Initialize the Thermocouple
 MAX31855 thermocouple(MAX31855_CLK, MAX31855_CS, MAX31855_DO);
 
-// Damit der Buzzer Laut gibt
-double const freqHi = 2000;
-double const freqLo = 0;
-uint8_t const channel = 0;
-uint8_t const resolution = 8;
-uint32_t const dutyCycle = 200;
-
 // Einige  Variablen
 uint16_t pwmOutput;
 double currentTemperature;
@@ -136,6 +129,7 @@ uint16_t secondsSOLL;
 uint16_t secondsIST;
 unsigned long windowStartTime;
 tempStatus_t reflowState;    // Reflow oven controller state machine state variable
+tempStatus_t lastReflowState;
 reflowStatus_t reflowStatus; // Reflow oven controller status
 Ticker SSRtckr;
 Ticker TSTtckr;
@@ -148,10 +142,8 @@ const uint16_t maxOutput = 100;
 // Gibt Laut
 void makeBeep()
 {
-  //ledcWriteTone(channel, freqHi);
   digitalWrite(buzzerPin, HIGH);
   delay(100);
-  //ledcWriteTone(channel, freqLo);
   digitalWrite(buzzerPin, LOW);
 }
 // Liest 5mal die Temperatur ein und ermittelt deren Durchschnitt.
@@ -506,6 +498,12 @@ void defineSOLLTemp(uint16_t second)
   static double temperature;
   static double nextTemp = BasisTemperatur;
 
+  if (lastReflowState != reflowState)
+  {
+    Serial.println("New reflowState: " + String(reflowState));
+    lastReflowState = reflowState;
+  }
+
   temperature = nextTemp;
   switch (reflowState) // Reflow oven controller state machine
   {
@@ -659,14 +657,15 @@ void saveTemperature()
   curveTemperature[lastTemp] = 0x00;
   // Flag setzen, dass eine Temperaturkurve gespeichert wurde
   EEPROM.writeByte(eepromAdrTemperatureFlag, savedFlag);
-  EEPROM.commit();
   // Temperatur sichern
+  Serial.println("Temperaturkurve speichern:");
   for (uint16_t x = 0; x < lastTemp + 1; x++)
   {
     EEPROM.writeByte(eepromAdrTemperature + x, curveTemperature[x]);
     Serial.println(curveTemperature[x]);
-    EEPROM.commit();
   }
+  EEPROM.commit();
+  Serial.println("Temperaturkurve gespeichert");
   lastTemp = 0;
 }
 // Um den tatsächlichen Temperaturverlauf möglichst nahe an die Sollwerte zu
@@ -743,6 +742,13 @@ String reflowProcess()
 {
   static uint16_t xt = 0;
   static tempStatus_t indicator = cold;
+  static tempStatus_t lastIndicator = cold;
+
+  if (lastIndicator != indicator)
+  {
+    Serial.println("New Indicator: " + String(indicator));
+    lastIndicator = indicator;
+  }
 
   currentTemperature = readTemperature();
 
@@ -854,7 +860,7 @@ String showCurve()
   if (currTemp == 0x00)
     indicator = complete;
   String answerCURVE = String(xt) + "/" + String(currTemp) + "/" + String(indicator);
-  Serial.println(answerCURVE);
+  //Serial.println(answerCURVE);
   xt++;
   return answerCURVE;
 }
@@ -909,6 +915,7 @@ String getStringPartByNr(String data, char separator, int index)
   // return text if this is the last part
   return dataPart;
 }
+
 // Mit dieser Prozedur wird zu Beginn eines Reflowprozesses von der 
 // Browseranwendung initiiert. Damit werden die PWM-Werte, die evtl.
 // im Browser verändert wurden übergeben, gespeichert und dann im
@@ -943,7 +950,7 @@ void onRequest(AsyncWebServerRequest *request)
         EEPROM.writeByte(eepromAdrParameter6, preTimeFactor);
         break;
       }
-      EEPROM.commit();
+      //EEPROM.commit();
     }
     EEPROM.writeByte(eepromAdrParameterFlag, savedFlag);
     EEPROM.commit();
@@ -983,13 +990,13 @@ void setup()
 
   // Die LED muss an einen Ausgang
   pinMode(LED_BUILTIN, OUTPUT);
+
   // Auch das SSR muss an einen Ausgang
   pinMode(ssrPin, OUTPUT);
+
   // Die Werte für den Buzzer werden gesetzt
   pinMode(buzzerPin, OUTPUT);
-  //ledcSetup(channel, freqHi, resolution);
-  //ledcAttachPin(buzzerPin, channel);
-  //ledcWrite(channel, dutyCycle);
+
   // Die Anwendung meldet sich mit einem Beep
   makeBeep();
 
