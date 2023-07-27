@@ -127,9 +127,8 @@ const uint16_t EEPROM_SIZE = eepromAdrPassword + eepromPWD;
 // Weitere Variablen
 uint16_t secondsSOLL;
 uint16_t secondsIST;
-unsigned long windowStartTime;
-tempStatus_t reflowState;    // Reflow oven controller state machine state variable
-tempStatus_t lastReflowState;
+tempStatus_t sollCalculatorState = cold;    // Reflow oven controller state machine state variable
+tempStatus_t reflowState = cold;    // Reflow oven controller state machine state variable
 reflowStatus_t reflowStatus; // Reflow oven controller status
 Ticker SSRtckr;
 Ticker TSTtckr;
@@ -423,9 +422,7 @@ void ofenTESTProc()
     // preheat
     preheatPWM = preheatDelta / deltaPreheat * maxOutput;
     EEPROM.writeByte(eepromAdrParameter0, preheatPWM);
-    EEPROM.commit();
     EEPROM.writeByte(eepromAdrParameter3, overshootTimePreheat);
-    EEPROM.commit();
 #ifdef TESTPRINT
     Serial.println("overshootTimePreheat: " + String(overshootTimePreheat));
     Serial.println("preheatDelta: " + String(preheatDelta) + " - deltaPreheat: " + String(deltaPreheat) + " - " + String(preheatPWM));
@@ -433,9 +430,7 @@ void ofenTESTProc()
     // soak
     soakPWM = soakDelta / deltaSoak * maxOutput;
     EEPROM.writeByte(eepromAdrParameter1, soakPWM);
-    EEPROM.commit();
     EEPROM.writeByte(eepromAdrParameter4, overshootTimeSoak);
-    EEPROM.commit();
 #ifdef TESTPRINT
     Serial.println("overshootTimeSoak: " + String(overshootTimeSoak));
     Serial.println("soakDelta: " + String(soakDelta) + " - deltaSoak: " + String(deltaSoak) + " - " + String(soakPWM));
@@ -443,9 +438,7 @@ void ofenTESTProc()
     // reflow
     reflowPWM = reflowDelta / deltaReflow * maxOutput;
     EEPROM.writeByte(eepromAdrParameter2, reflowPWM);
-    EEPROM.commit();
     EEPROM.writeByte(eepromAdrParameter5, overshootTimeReflow);
-    EEPROM.commit();
 #ifdef TESTPRINT
     Serial.println("overshootTimeReflow: " + String(overshootTimeReflow));
     Serial.println("reflowDelta: " + String(reflowDelta) + " - deltaReflow: " + String(deltaReflow) + " - " + String(reflowPWM));
@@ -498,20 +491,14 @@ void defineSOLLTemp(uint16_t second)
   static double temperature;
   static double nextTemp = BasisTemperatur;
 
-  if (lastReflowState != reflowState)
-  {
-    Serial.println("New reflowState: " + String(reflowState));
-    lastReflowState = reflowState;
-  }
-
   temperature = nextTemp;
-  switch (reflowState) // Reflow oven controller state machine
+  switch (sollCalculatorState) // Reflow oven controller state machine
   {
 
   case preheat:                        // If state = PREHEAT
     if (temperature >= tempPreheatMax) // If minimum soak temperature is achieved
     {
-      reflowState = soak; // Proceed to soaking state
+      sollCalculatorState = soak; // Proceed to soaking state
     }
     else
       nextTemp = getNextSollTemp(nextTemp, tempPreheatMax, preheatDelta);
@@ -520,7 +507,7 @@ void defineSOLLTemp(uint16_t second)
   case soak:                        // If state = SOAK
     if (temperature >= tempSoakMax) // If maximum soak temperature is achieved
     {
-      reflowState = reflow; // Proceed to reflowing state
+      sollCalculatorState = reflow; // Proceed to reflowing state
     }
     else
       nextTemp = getNextSollTemp(nextTemp, tempSoakMax, soakDelta);
@@ -529,7 +516,7 @@ void defineSOLLTemp(uint16_t second)
   case reflow:                        // If state = REFLOW HEAT
     if (temperature >= tempReflowMax) // If maximum reflow temperature is achieved
     {
-      reflowState = cooling; // Proceed to reflowing level state
+      sollCalculatorState = cooling; // Proceed to reflowing level state
     }
     else
       nextTemp = getNextSollTemp(nextTemp, tempReflowMax, reflowDelta);
@@ -539,20 +526,20 @@ void defineSOLLTemp(uint16_t second)
     if (temperature <= tempCoolMin) // If minimummum reflow temperature is achieved
     {
       nextTemp = BasisTemperatur - 1; // 
-      reflowState = complete;          // Proceed to cool down state
+      sollCalculatorState = complete;          // Proceed to cool down state
     }
     else
-      nextTemp = getNextSollTemp(nextTemp, tempCoolMin, coolingDelta);
+      nextTemp = getNextSollTemp(nextTemp, tempCoolMin, coolingDelta);    //TODO offenbar nur dieser Zustand aktiv
     break;
   case cold:
   case complete: // If state = REFLOW COOL DOWN
     break;
   }
   sollTemperatur[second].Temperature = nextTemp;
-  sollTemperatur[second].prePhase = reflowState;
-  sollTemperatur[second].Phase = reflowState;
+  sollTemperatur[second].prePhase = sollCalculatorState;
+  sollTemperatur[second].Phase = sollCalculatorState;
   sollTemperatur[second].preTemperature = nextTemp;
-  switch (reflowState)
+  switch (sollCalculatorState)
   {
   case preheat:
     sollTemperatur[second].PWM = preheatPWM;
@@ -619,7 +606,7 @@ void rebuildPreTempArray()
 // Sekunde festlegt, wird hier der gesamte Temperaturverlauf abgearbeitet.
 void setDataSOLL()
 {
-  reflowState = preheat;
+  sollCalculatorState = preheat;
   for (maxSeconds = 0; maxSeconds < ultimateSeconds; maxSeconds++)
   {
     defineSOLLTemp(maxSeconds); // mindestens 1 mal in der Sekunde
@@ -658,11 +645,11 @@ void saveTemperature()
   // Flag setzen, dass eine Temperaturkurve gespeichert wurde
   EEPROM.writeByte(eepromAdrTemperatureFlag, savedFlag);
   // Temperatur sichern
-  Serial.println("Temperaturkurve speichern:");
+  Serial.println("Temperaturkurve speichern...");
   for (uint16_t x = 0; x < lastTemp + 1; x++)
   {
     EEPROM.writeByte(eepromAdrTemperature + x, curveTemperature[x]);
-    Serial.println(curveTemperature[x]);
+    //Serial.println(curveTemperature[x]);
   }
   EEPROM.commit();
   Serial.println("Temperaturkurve gespeichert");
@@ -741,30 +728,22 @@ double correctTemperature(uint16_t currtime)
 String reflowProcess()
 {
   static uint16_t xt = 0;
-  static tempStatus_t indicator = cold;
-  static tempStatus_t lastIndicator = cold;
-
-  if (lastIndicator != indicator)
-  {
-    Serial.println("New Indicator: " + String(indicator));
-    lastIndicator = indicator;
-  }
 
   currentTemperature = readTemperature();
 
   // falls JAVASCRIPT zu viel abfragt
-  if (indicator >= complete)
-    return String(xt) + "/" + String(currentTemperature) + "/" + String(indicator);
-  switch (indicator)
+  if (reflowState >= complete)
+    return String(xt) + "/" + String(currentTemperature) + "/" + String(reflowState);
+  switch (reflowState)
   {
   case cold: // Aufwärmen, unterhalb von BasisTemperatur
-             // die Parameter werden in OnRequest festgelegt
+             // die Parameter werden in startReflowProcess festgelegt
     if (currentTemperature >= BasisTemperatur - 15)
     {
       setPWM(preheatPWM);
       if (currentTemperature >= BasisTemperatur)
       {
-        indicator = preheat; // von BasisTemperatur bis tempPreheatMax
+        reflowState = preheat; // von BasisTemperatur bis tempPreheatMax
         makeBeep();
       }
     }
@@ -772,7 +751,7 @@ String reflowProcess()
   case preheat: // von BasisTemperatur bis tempPreheatMax
     if (sollTemperatur[xt].prePhase == soak)
     {
-      indicator = soak; // von tempPreheatMax bis tempSoakMax
+      reflowState = soak; // von tempPreheatMax bis tempSoakMax
       makeBeep();
       Serial.println("---> Changed to soak");
     }
@@ -780,7 +759,7 @@ String reflowProcess()
   case soak: // von tempPreheatMax bis tempSoakMax
     if (sollTemperatur[xt].prePhase == reflow)
     {
-      indicator = reflow; // von tempSoakMax bis tempReflowMax
+      reflowState = reflow; // von tempSoakMax bis tempReflowMax
       makeBeep();
       Serial.println("---> Changed to reflow");
     }
@@ -788,7 +767,7 @@ String reflowProcess()
   case reflow: // von tempSoakMax bis tempReflowMax
     if (sollTemperatur[xt].prePhase == cooling)
     {
-      indicator = cooling; // von tempSoakMax bis tempReflowMax
+      reflowState = cooling; // von tempSoakMax bis tempReflowMax
       // Ofen ausschalten
       switchOvenOFF();
       makeBeep();
@@ -798,7 +777,7 @@ String reflowProcess()
   case cooling: // von tempReflowMax bis tempCoolMin
     if (currentTemperature <= tempCoolMin)
     {
-      indicator = complete; // unterhalb von tempCoolMin
+      reflowState = complete; // unterhalb von tempCoolMin
       lastTemp = xt;
       makeBeep();
       Serial.println("---> Changed to complete");
@@ -807,7 +786,7 @@ String reflowProcess()
   case complete: // unterhalb von tempCoolMin
     break;
   }
-  if ((indicator > cold) && (indicator != complete))
+  if ((reflowState > cold) && (reflowState != complete))
   {
     Serial.println(String(xt) + ": SOLL: " + String(sollTemperatur[xt].preTemperature) + " IST: " + String(currentTemperature) + " FEHLER: " + String(correctTemperature(xt)) + " PWM: " + String(getPWM()));
     curveTemperature[xt] = (uint16_t)currentTemperature;
@@ -920,11 +899,14 @@ String getStringPartByNr(String data, char separator, int index)
 // Browseranwendung initiiert. Damit werden die PWM-Werte, die evtl.
 // im Browser verändert wurden übergeben, gespeichert und dann im
 // Temperaturverlauf berücksichtigt.
-void onRequest(AsyncWebServerRequest *request)
+void startReflowProcess(AsyncWebServerRequest *request)
 {
   String urlLine = request->url();
   String val;
-  if (urlLine.indexOf("/PARAM") >= 0)
+  bool paramChanged = false;
+
+  if (  (urlLine.indexOf("/PARAM") >= 0)
+      &&(reflowStatus == REFLOW_STATUS_OFF))
   {
     Serial.println("Message: " + String(urlLine));
     for (uint8_t p = 0; p < 4; p++)
@@ -934,26 +916,51 @@ void onRequest(AsyncWebServerRequest *request)
       switch (p)
       {
       case 0:
-        preheatPWM = (uint8_t)val.toInt();
-        EEPROM.writeByte(eepromAdrParameter0, preheatPWM);
+        if ((uint8_t)val.toInt() != preheatPWM)
+        {
+          preheatPWM = (uint8_t)val.toInt();
+          EEPROM.writeByte(eepromAdrParameter0, preheatPWM);
+          paramChanged = true;
+        }
         break;
       case 1:
-        soakPWM = (uint8_t)val.toInt();
-        EEPROM.writeByte(eepromAdrParameter1, soakPWM);
+        if ((uint8_t)val.toInt() != soakPWM)
+        {
+          soakPWM = (uint8_t)val.toInt();
+          EEPROM.writeByte(eepromAdrParameter1, soakPWM);
+          paramChanged = true;
+        }
         break;
       case 2:
-        reflowPWM = (uint8_t)val.toInt();
-        EEPROM.writeByte(eepromAdrParameter2, reflowPWM);
+        if ((uint8_t)val.toInt() != reflowPWM)
+        {
+          reflowPWM = (uint8_t)val.toInt();
+          EEPROM.writeByte(eepromAdrParameter2, reflowPWM);
+          paramChanged = true;
+        }
         break;
       case 3:
-        preTimeFactor = (uint8_t)val.toInt();
-        EEPROM.writeByte(eepromAdrParameter6, preTimeFactor);
+        if ((uint8_t)val.toInt() != preTimeFactor)
+        {
+          preTimeFactor = (uint8_t)val.toInt();
+          EEPROM.writeByte(eepromAdrParameter6, preTimeFactor);
+          paramChanged = true;
+        }
         break;
       }
-      //EEPROM.commit();
     }
-    EEPROM.writeByte(eepromAdrParameterFlag, savedFlag);
-    EEPROM.commit();
+
+    if (paramChanged)
+    {
+      EEPROM.writeByte(eepromAdrParameterFlag, savedFlag);
+      EEPROM.commit();
+      Serial.println("Saved new EEPROM values.");
+    }
+    else
+    {
+      Serial.println("EEPROM values unchanged.");
+    }
+
     Serial.println("1: " + String(preheatPWM) + " 2: " + String(soakPWM) + " 3: " + String(reflowPWM) + " 4: " + String(preTimeFactor));
     rebuildPreTempArray();
     switchOvenON();
@@ -1043,6 +1050,7 @@ void setup()
     if (tmp <= 2*maxOutput)
       preTimeFactor = tmp;
   }
+
   // Solltemperatur wird ermittelt
   setDataSOLL();
 
@@ -1069,11 +1077,9 @@ void setup()
             { request->send_P(200, "text/plain", ofenTEST().c_str()); });
 
   // Start server
-  server.onNotFound(onRequest);
+  server.onNotFound(startReflowProcess);
   server.begin();
 
-  // Aktuelle Zeit
-  windowStartTime = millis();
   // Start des Timers für das SSR
   SSRtckr.attach_ms(SSRtckrTime, setSSR); // each sec
   // Vorsichtshalber schalten wir den Ofen zunächst mal aus

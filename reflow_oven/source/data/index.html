@@ -513,11 +513,6 @@
         // 0: Start, Übergabe der Parameter
         // 1: Abruf und Empfang der IST-Daten
         // 2: Warte bis der aktuelle Abruf beantwortet ist
-        if (rcvdREFLOW == 1) {
-            xhttpREFLOW.open("GET", "/REFLOW", true);
-            xhttpREFLOW.send();
-            rcvdREFLOW = 2;
-        }
         if (rcvdREFLOW == 0) {
             preheatGrad = parseInt(preHeatgradient.value)
             soakGrad = parseInt(soakgradient.value);
@@ -527,6 +522,11 @@
             xhttpREFLOW.open("GET", callSrv, true);
             xhttpREFLOW.send();
             rcvdREFLOW = 1;
+        }
+        else if (rcvdREFLOW == 1) {
+            xhttpREFLOW.open("GET", "/REFLOW", true);
+            xhttpREFLOW.send();
+            rcvdREFLOW = 2;
         }
     };
 
