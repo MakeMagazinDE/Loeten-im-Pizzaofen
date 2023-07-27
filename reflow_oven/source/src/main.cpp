@@ -148,9 +148,11 @@ const uint16_t maxOutput = 100;
 // Gibt Laut
 void makeBeep()
 {
-  ledcWriteTone(channel, freqHi);
+  //ledcWriteTone(channel, freqHi);
+  digitalWrite(buzzerPin, HIGH);
   delay(100);
-  ledcWriteTone(channel, freqLo);
+  //ledcWriteTone(channel, freqLo);
+  digitalWrite(buzzerPin, LOW);
 }
 // Liest 5mal die Temperatur ein und ermittelt deren Durchschnitt.
 // Dadurch werden Ausreißer vermieden.
@@ -474,6 +476,7 @@ void ofenTESTProc()
 // aufruft.
 String ofenTEST()
 {
+  makeBeep();
   TSTtckr.attach_ms(TSTtckrTime, ofenTESTProc); // each sec
   return "1";
 }
@@ -815,6 +818,7 @@ String stopProcess()
 {
   // Ofen ausschalten
   switchOvenOFF();
+  makeBeep();
   return "1";
 }
 // Diese Funktion wird von der Browseranwendung aufgerufen und stellt
@@ -982,9 +986,10 @@ void setup()
   // Auch das SSR muss an einen Ausgang
   pinMode(ssrPin, OUTPUT);
   // Die Werte für den Buzzer werden gesetzt
-  ledcSetup(channel, freqHi, resolution);
-  ledcAttachPin(buzzerPin, channel);
-  ledcWrite(channel, dutyCycle);
+  pinMode(buzzerPin, OUTPUT);
+  //ledcSetup(channel, freqHi, resolution);
+  //ledcAttachPin(buzzerPin, channel);
+  //ledcWrite(channel, dutyCycle);
   // Die Anwendung meldet sich mit einem Beep
   makeBeep();
 
